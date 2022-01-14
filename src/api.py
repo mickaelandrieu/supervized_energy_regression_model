@@ -28,10 +28,10 @@ def predict(item: Item):
         A dictionnary with the predicted nutrigrade
         and the related probability
     """
-    
+
     # @TODO: build the sample
     sample = {}
-    
+
     prediction = model.predict([sample])[0]
     probability = model.predict_proba([sample]).argmax(1).item()
 
