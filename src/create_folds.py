@@ -15,7 +15,7 @@ if __name__ == "__main__":
     df = df.sample(frac=1).reset_index(drop=True)
     target = np.array(df[config.TARGET])
 
-    kf = model_selection.StratifiedKFold(n_splits=5)
+    kf = model_selection.KFold(n_splits=5)
 
     splits = kf.split(X=df, y=target)
     for fold, (_train_index, test_index) in enumerate(splits):

@@ -40,9 +40,12 @@ def run(fold, model):
     clf.fit(x_train, y_train)
 
     preds = clf.predict(x_valid)
-
-    accuracy = metrics.accuracy_score(y_valid, preds)
-    console.log("Fold={0}, Accuracy={1}".format(fold, accuracy))
+    
+    for metric in config.METRICS:
+        metric_func = getattr(metrics, metric)
+        
+        results = metric_func(y_valid, preds)
+        console.log("Fold={0}, {1}={2}".format(fold, metric, results))
 
     filepath = path.join("{0}{1}_{2}.z".format(config.MODELS, model, fold))
     joblib.dump(clf, filepath, compress=("zlib", 7))

@@ -11,18 +11,18 @@ app = FastAPI()
 model = joblib.load("{0}best_model.z".format(config.MODELS))
 
 
-class Item(BaseModel):
+class Building(BaseModel):
     """The expected model from REST API request."""
 
     some_property: int
 
 
 @app.post("/")
-def predict(item: Item):
+def predict(building: Building):
     """Return ML predictions, see /docs for more information.
 
     Args:
-        item: (Item) the parsed data from user request
+        building: (Building) the parsed data from user request
 
     Returns:
         A dictionnary with the predicted nutrigrade

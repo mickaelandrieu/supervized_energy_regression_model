@@ -37,7 +37,9 @@ def run(fold):
     report = Table(title="Models performance of Dataset fold {0}".format(fold))
     report.add_column("Model", style="cyan")
     report.add_column("Time (s)", style="magenta")
-    report.add_column("Accuracy", style="green")
+    
+    for metric in config.METRICS:
+        report.add_column(metric, style="spring_green2")
 
     for name in model_dispatcher.models.keys():
         clf = model_dispatcher.models[name]
@@ -45,17 +47,23 @@ def run(fold):
         start = time()
         clf.fit(x_train, y_train)
         preds = clf.predict(x_valid)
-        accuracy = metrics.accuracy_score(y_valid, preds)
+        
+        results = {}
+        for metric in config.METRICS:
+            metric_func = getattr(metrics, metric)
+        
+            results[metric] = str(round(metric_func(y_valid, preds), 5))
         elapsed_time = str(round(time() - start, 3))
 
-        report.add_row(name, elapsed_time, str(accuracy))
+
+        report.add_row(name, elapsed_time, *results.values())
 
     console.print(report)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Display a table with all the models on a specific fold.'
+        description="Display a table with all the models on a specific fold."
     )
 
     parser.add_argument("--fold", type=int, default=0, help="The fold [0, 4].")

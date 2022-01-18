@@ -1,6 +1,7 @@
 """List of functions used for this project."""
 
 import ast
+
 import pandas as pd
 
 
@@ -103,11 +104,7 @@ def clean_variables_names(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: A DataFrame
     """
     regexp = r"(?<!^)(?=[A-Z])"
-    df.columns = (
-        df.columns.str.strip()
-        .str.replace(regexp, "_", regex=True)
-        .str.lower()
-    )
+    df.columns = df.columns.str.strip().str.replace(regexp, "_", regex=True).str.lower()
 
     return df.rename(
         columns={
@@ -169,14 +166,16 @@ def remove_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     MEAN_YEAR = 2015.5
     numerical_variables = list(df.select_dtypes("number"))
     unique_buildings = df[numerical_variables].groupby("building_id").mean()
-    unique_buildings["is_agregation"] = (unique_buildings["data_year"] == MEAN_YEAR)
+    unique_buildings["is_agregation"] = unique_buildings["data_year"] == MEAN_YEAR
 
     deduplicated_buildings = df.sort_values("data_year").drop_duplicates(
         subset=["building_id"], keep="last"
     )
     numerical_variables.remove("building_id")
 
-    deduplicated_buildings = deduplicated_buildings.drop(numerical_variables, axis="columns")
+    deduplicated_buildings = deduplicated_buildings.drop(
+        numerical_variables, axis="columns"
+    )
     return deduplicated_buildings.merge(unique_buildings, on="building_id", how="left")
 
 
