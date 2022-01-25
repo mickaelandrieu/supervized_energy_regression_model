@@ -22,18 +22,16 @@ def feat_engineer_data(should_write: bool) -> pd.DataFrame:
     """
     df = pd.read_csv('{0}cleaned_data.csv'.format(config.INPUT))
     
-    df_columns = df.columns
-
-    # STUPID 1: Drop all NaN values
-    df = df.dropna()
+    df = (
+        df.pipe(utils.remove_unnamed)
+          .pipe(utils.remove_no_business_value_variables)
+          .pipe(utils.fix_multi_colinearity, config.BOUND, config.TARGET)
+          .pipe(pd.DataFrame.dropna)
+          .pipe(utils.encode_categorical)
+          .pipe(utils.apply_scaling)
+    )
     
-    # STUPID 2 : Transform all categorical using Label Encoding
-    cols = df.select_dtypes(include=['object']).columns.tolist()
-    df[cols] = df[cols].apply(LabelEncoder().fit_transform)
-    
-    # STUPID 3 : Standard scale everything
-    scaler = StandardScaler()
-    df = pd.DataFrame(scaler.fit_transform(df), columns=df_columns)
+    pd.DataFrame(df.columns).to_csv('{}prepared_features.csv'.format(config.DOCS))
 
     if should_write:
         df.to_pickle("{0}".format(config.TRAINING_FILE))

@@ -1,6 +1,7 @@
 """Stores the project configuration."""
 
 TARGET = "site_energy_use_target"
+BOUND = 0.7
 TRAINING_FILE = "./input/training.pkl"
 TRAINING_FOLDS_FILE = "./input/training_folds.pkl"
 

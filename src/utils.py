@@ -3,6 +3,8 @@
 import ast
 
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
 
 
 def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -212,3 +214,151 @@ def remove_useless_variables(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop(
         ["city", "state", "tax_parcel_identification_number"], axis="columns"
     )
+
+# https://github.com/JamesIgoe/GoogleFitAnalysis/blob/master/Analysis.ipynb
+
+def corrFilter(x: pd.DataFrame, bound: float) -> pd.DataFrame:
+    """List only variable with correlation higher than the selected bound.
+
+    Args:
+        x (pd.DataFrame): the DataFrame
+        bound (float): the value of correlation
+
+    Returns:
+        pd.DataFrame: A DataFrame
+    """
+    xCorr = x.corr()
+    xFiltered = xCorr[((xCorr >= bound) | (xCorr <= -bound)) & (xCorr !=1.000)]
+    return xFiltered
+
+def corrFilterFlattened(x: pd.DataFrame, bound: float) -> pd.DataFrame:
+    """Flatten the DataFrame form corrFilter function to remove NaN values.
+
+    Args:
+        x (pd.DataFrame): the DataFrame
+        bound (float): the bound as previously described
+
+    Returns:
+        pd.DataFrame: the DataFrame
+    """
+    xFiltered = corrFilter(x, bound)
+    xFlattened = xFiltered.unstack().sort_values().drop_duplicates()
+    return xFlattened
+
+def filterForLabels(df: pd.DataFrame, label: str) -> pd.DataFrame:
+    """Get the list of variables that needs to be removed regarding a specific target.
+
+    Args:
+        df (pd.DataFrame): the DataFrame of correlations, see corrFilterFlattened()
+        label (str): the name of the variable
+
+    Returns:
+        pd.DataFrame: the DataFrame
+    """
+    df = df.sort_index()
+    try:
+        sideLeft = df[label,]
+    except:
+        sideLeft = pd.DataFrame()
+
+    try:
+        sideRight = df[:,label]
+    except:
+        sideRight = pd.DataFrame()
+
+    if sideLeft.empty and sideRight.empty:
+        return pd.DataFrame()
+    elif sideLeft.empty:        
+        concat = sideRight.to_frame(name='correlation').rename_axis('variable').reset_index(level=0)
+        return concat
+    elif sideRight.empty:
+        concat = sideLeft.to_frame(name='correlation').rename_axis('variable').reset_index(level=0)
+        return concat
+    else:
+        concat = pd.concat([sideLeft,sideRight], axis=1)
+        concat['correlation'] = concat[0].fillna(0) + concat[1].fillna(0)
+        concat.drop(columns=[0,1], inplace=True)
+
+        return concat.rename_axis('variable').reset_index(level=0)
+ 
+def remove_unnamed(df: pd.DataFrame) -> pd.DataFrame:
+    return df.drop('Unnamed: 0', axis='columns')
+
+def fix_multi_colinearity(df: pd.DataFrame, bound: float, target: str) -> pd.DataFrame:
+    """Remove every variable with high correlation with the target (overfitting)
+
+    Args:
+        df (pd.DataFrame): The DataFrame
+        bound (float): The bound
+        target (str): The selected target
+
+    Returns:
+        pd.DataFrame: A DataFrame
+    """
+    corr_df = corrFilterFlattened(df, bound)
+    variables_to_remove = filterForLabels(corr_df, target)['variable'].tolist()
+    
+    return df.drop(variables_to_remove, axis="columns")
+
+def encode_categorical(df: pd.DataFrame) -> pd.DataFrame:
+    """Transform every categorical variable to numerical
+
+    Args:
+        df (pd.DataFrame): the DataFrame
+
+    Returns:
+        pd.DataFrame: the DataFrame
+    """
+    
+    cols = df.select_dtypes(include=['object']).columns.tolist()
+    df[cols] = df[cols].apply(LabelEncoder().fit_transform)
+    
+    return df
+
+def remove_no_business_value_variables(df: pd.DataFrame) -> pd.DataFrame:
+    """Theses variables don't have relationship with the target
+
+    Args:
+        df (pd.DataFrame): the DataFrame
+
+    Returns:
+        pd.DataFrame: the DataFrame
+    """
+
+    return df.drop([
+        'building_id',
+        'property_name',
+        'default_data',
+        'compliance_status',
+        'site_eui',
+        'site_euiwn',
+        'source_euiwn',
+        'source_eui',
+        'emissions_intensity',
+        'steam_use',
+        'natural_gas',
+        'natural_gas_therms',
+        'second_largest_property_use_type_gfa',
+        'second_largest_property_use_type',
+        'latitude',
+        'longitude',
+        'address',
+        'data_year',
+        'is_agregation',
+        'zip_code',
+        'year_built',
+        'council_district_code'
+        ],axis='columns'
+    )
+
+def apply_scaling(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply scaling to every columns
+
+    Args:
+        df (pd.DataFrame): the DataFrame
+
+    Returns:
+        pd.DataFrame: the DataFrame
+    """
+    
+    return pd.DataFrame(StandardScaler().fit_transform(df), columns=df.columns)

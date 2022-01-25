@@ -33,8 +33,8 @@ Then access [http://localhost:8501](http://localhost:8501/docs)
 ## Train the model
 
 1. Download the RAW data ;
-2. Execute `src/clean.py` to create `cleaned_data.pkl` ;
-3. Execute `src/feat_prep.py` to create `training.pkl` ;
+2. Execute `src/clean.py` to create `cleaned_data.csv` ;
+3. Execute `src/prepare_features.py` to create `training.pkl` ;
 4. Execute `src/create_folds.py` to create `training_folds.pkl` ;
 5. Execute `src/train.py` to train the model ;
 
@@ -57,3 +57,14 @@ python -m flake8 src/ --count --statistics
 ## LICENSE
 
 This project is provided under the MIT license.
+
+## TODO
+
+* Quelles variables influencent le plus ?
+* Quelle est la distribution des variables ?
+* Data leakage en machine learning, comment l'éviter ?
+* Signification des colonnes : quel pourrait être l'impact réel de chaque variable ?
+* On doit éviter les redondances d'information ? (corrélation)
+* Savoir expliquer ce qu'il se passe à l'intérieur du modèle ?
+* Plus de métriques pour décider, quel est le choix de la métrique ?
+* Algos qui aiment les données symétriques/normales : donc si pas normale, il aime pas.

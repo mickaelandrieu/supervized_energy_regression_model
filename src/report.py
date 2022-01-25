@@ -9,6 +9,7 @@ import pandas as pd
 
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 from sklearn import metrics
 
 import config
@@ -34,7 +35,10 @@ def run(fold):
     x_valid = np.array(df_valid.drop(config.TARGET, axis="columns"))
     y_valid = np.array(df_valid[config.TARGET])
 
-    report = Table(title="Models performance of Dataset fold {0}".format(fold))
+    title = Text("Target for this report is the following: ``{0}``".format(config.TARGET), style="bold blue")
+    console.print(title)
+
+    report = Table(title="Models performance for fold n°{0}".format(fold))
     report.add_column("Model", style="cyan")
     report.add_column("Time (s)", style="magenta")
     
