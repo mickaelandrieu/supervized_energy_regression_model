@@ -30,11 +30,12 @@ def clean_data(should_write: bool) -> pd.DataFrame:
         .pipe(utils.clean_variables_names)
         .pipe(utils.remove_duplicates)
         .pipe(utils.remove_null_values)
+        .pipe(utils.clean_data)
         .pipe(utils.remove_useless_variables)
     )
 
     if should_write:
-        df.to_csv("{0}cleaned_data.csv".format(config.INPUT))
+        df.set_index("building_id").to_csv("{0}cleaned_data.csv".format(config.INPUT))
 
     return df
 

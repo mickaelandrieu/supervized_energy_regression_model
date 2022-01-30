@@ -4,8 +4,8 @@
 import argparse
 
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
+
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 import config
 import utils
@@ -20,25 +20,25 @@ def feat_engineer_data(should_write: bool) -> pd.DataFrame:
     Returns:
         DataFrame: the cleaned DataFrame
     """
-    df = pd.read_csv('{0}cleaned_data.csv'.format(config.INPUT))
-    
-    df_columns = df.columns
+    df = pd.read_csv("{0}cleaned_data.csv".format(config.INPUT))
 
-    # STUPID 1: Drop all NaN values
-    df = df.dropna()
-    
-    # STUPID 2 : Transform all categorical using Label Encoding
-    cols = df.select_dtypes(include=['object']).columns.tolist()
-    df[cols] = df[cols].apply(LabelEncoder().fit_transform)
-    
-    # STUPID 3 : Standard scale everything
-    scaler = StandardScaler()
-    df = pd.DataFrame(scaler.fit_transform(df), columns=df_columns)
+    df = (
+        df.pipe(utils.create_variables)
+        .pipe(utils.fix_multi_colinearity, config.BOUND, config.TARGET)
+        .pipe(utils.transform_target, config.TARGET)
+        .pipe(utils.remove_no_business_value_variables)
+        .pipe(pd.DataFrame.dropna)
+        .pipe(utils.encode_categorical)
+        .pipe(utils.apply_scaling)
+    )
+
+    pd.DataFrame(df.columns).to_csv("{}prepared_features.csv".format(config.DOCS))
 
     if should_write:
         df.to_pickle("{0}".format(config.TRAINING_FILE))
 
     return df
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -54,5 +54,3 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     feat_engineer_data(should_write=args.write)
-
-

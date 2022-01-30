@@ -10,3 +10,5 @@ black==21.12b0
 wemake-python-styleguide==0.16.0
 openpyxl==3.0.9
 pandas_profiling==3.1.0
+folium==0.12.1
+haversine==2.5.1

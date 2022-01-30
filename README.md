@@ -33,8 +33,8 @@ Then access [http://localhost:8501](http://localhost:8501/docs)
 ## Train the model
 
 1. Download the RAW data ;
-2. Execute `src/clean.py` to create `cleaned_data.pkl` ;
-3. Execute `src/feat_prep.py` to create `training.pkl` ;
+2. Execute `src/clean.py` to create `cleaned_data.csv` ;
+3. Execute `src/prepare_features.py` to create `training.pkl` ;
 4. Execute `src/create_folds.py` to create `training_folds.pkl` ;
 5. Execute `src/train.py` to train the model ;
 
