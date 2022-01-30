@@ -57,14 +57,3 @@ python -m flake8 src/ --count --statistics
 ## LICENSE
 
 This project is provided under the MIT license.
-
-## TODO
-
-* Quelles variables influencent le plus ?
-* Quelle est la distribution des variables ?
-* Data leakage en machine learning, comment l'éviter ?
-* Signification des colonnes : quel pourrait être l'impact réel de chaque variable ?
-* On doit éviter les redondances d'information ? (corrélation)
-* Savoir expliquer ce qu'il se passe à l'intérieur du modèle ?
-* Plus de métriques pour décider, quel est le choix de la métrique ?
-* Algos qui aiment les données symétriques/normales : donc si pas normale, il aime pas.

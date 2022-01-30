@@ -12,7 +12,7 @@ linear = LinearRegression(n_jobs=-1)
 poly_linear = Pipeline(
     [("poly", PolynomialFeatures()), ("linear", LinearRegression(fit_intercept=False))]
 )
-raw_svm = LinearSVR(dual=False, loss='squared_epsilon_insensitive')
+raw_svm = LinearSVR(dual=False, loss="squared_epsilon_insensitive")
 decision_tree = DecisionTreeRegressor()
 random_forest = RandomForestRegressor(n_jobs=-1)
 

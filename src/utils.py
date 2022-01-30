@@ -2,9 +2,11 @@
 
 import ast
 
+import haversine as hs
+import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
+
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 
 def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -138,6 +140,34 @@ def clean_variables_names(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Clean the Data (huge function that needs to be splited)
+
+    Args:
+        df (pd.DataFrame): the DataFrame
+
+    Returns:
+        pd.DataFrame: the DataFrame
+    """
+    df["neighborhood"] = df["neighborhood"].str.lower()
+    df = df[~df.site_energy_use_target.isna()]
+    df = df[~df.emissions_target.isna()]
+
+    # treat latitude and longitude as floats
+    df["latitude"] = df["latitude"].astype("float")
+    df["longitude"] = df["longitude"].astype("float")
+
+    SEATTLE_COORDS = [47.606, -122.332]
+    seattle_coords = tuple(SEATTLE_COORDS)
+    df["coords"] = list(zip(df["latitude"], df["longitude"]))
+
+    df["distance_to_center"] = df.coords.apply(
+        lambda x: distance_from(x, seattle_coords)
+    )
+
+    return df
+
+
 def keep_non_residential(df: pd.DataFrame) -> pd.DataFrame:
     """Keep only the non residential buildings.
 
@@ -215,9 +245,11 @@ def remove_useless_variables(df: pd.DataFrame) -> pd.DataFrame:
         ["city", "state", "tax_parcel_identification_number"], axis="columns"
     )
 
+
 # https://github.com/JamesIgoe/GoogleFitAnalysis/blob/master/Analysis.ipynb
 
-def corrFilter(x: pd.DataFrame, bound: float) -> pd.DataFrame:
+
+def corr_filter(x: pd.DataFrame, bound: float) -> pd.DataFrame:
     """List only variable with correlation higher than the selected bound.
 
     Args:
@@ -228,10 +260,11 @@ def corrFilter(x: pd.DataFrame, bound: float) -> pd.DataFrame:
         pd.DataFrame: A DataFrame
     """
     xCorr = x.corr()
-    xFiltered = xCorr[((xCorr >= bound) | (xCorr <= -bound)) & (xCorr !=1.000)]
+    xFiltered = xCorr[((xCorr >= bound) | (xCorr <= -bound)) & (xCorr != 1.000)]
     return xFiltered
 
-def corrFilterFlattened(x: pd.DataFrame, bound: float) -> pd.DataFrame:
+
+def corr_filter_flattened(x: pd.DataFrame, bound: float) -> pd.DataFrame:
     """Flatten the DataFrame form corrFilter function to remove NaN values.
 
     Args:
@@ -241,11 +274,12 @@ def corrFilterFlattened(x: pd.DataFrame, bound: float) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the DataFrame
     """
-    xFiltered = corrFilter(x, bound)
+    xFiltered = corr_filter(x, bound)
     xFlattened = xFiltered.unstack().sort_values().drop_duplicates()
     return xFlattened
 
-def filterForLabels(df: pd.DataFrame, label: str) -> pd.DataFrame:
+
+def filter_for_labels(df: pd.DataFrame, label: str) -> pd.DataFrame:
     """Get the list of variables that needs to be removed regarding a specific target.
 
     Args:
@@ -256,33 +290,42 @@ def filterForLabels(df: pd.DataFrame, label: str) -> pd.DataFrame:
         pd.DataFrame: the DataFrame
     """
     df = df.sort_index()
+
     try:
-        sideLeft = df[label,]
+        sideLeft = df[
+            label,
+        ]
     except:
         sideLeft = pd.DataFrame()
 
     try:
-        sideRight = df[:,label]
+        sideRight = df[:, label]
     except:
         sideRight = pd.DataFrame()
 
     if sideLeft.empty and sideRight.empty:
         return pd.DataFrame()
-    elif sideLeft.empty:        
-        concat = sideRight.to_frame(name='correlation').rename_axis('variable').reset_index(level=0)
+    elif sideLeft.empty:
+        concat = (
+            sideRight.to_frame(name="correlation")
+            .rename_axis("variable")
+            .reset_index(level=0)
+        )
         return concat
     elif sideRight.empty:
-        concat = sideLeft.to_frame(name='correlation').rename_axis('variable').reset_index(level=0)
+        concat = (
+            sideLeft.to_frame(name="correlation")
+            .rename_axis("variable")
+            .reset_index(level=0)
+        )
         return concat
     else:
-        concat = pd.concat([sideLeft,sideRight], axis=1)
-        concat['correlation'] = concat[0].fillna(0) + concat[1].fillna(0)
-        concat.drop(columns=[0,1], inplace=True)
+        concat = pd.concat([sideLeft, sideRight], axis=1)
+        concat["correlation"] = concat[0].fillna(0) + concat[1].fillna(0)
+        concat.drop(columns=[0, 1], inplace=True)
 
-        return concat.rename_axis('variable').reset_index(level=0)
- 
-def remove_unnamed(df: pd.DataFrame) -> pd.DataFrame:
-    return df.drop('Unnamed: 0', axis='columns')
+        return concat.rename_axis("variable").reset_index(level=0)
+
 
 def fix_multi_colinearity(df: pd.DataFrame, bound: float, target: str) -> pd.DataFrame:
     """Remove every variable with high correlation with the target (overfitting)
@@ -295,10 +338,12 @@ def fix_multi_colinearity(df: pd.DataFrame, bound: float, target: str) -> pd.Dat
     Returns:
         pd.DataFrame: A DataFrame
     """
-    corr_df = corrFilterFlattened(df, bound)
-    variables_to_remove = filterForLabels(corr_df, target)['variable'].tolist()
-    
+    corr_df = corr_filter_flattened(df, bound)
+
+    variables_to_remove = filter_for_labels(corr_df, target)["variable"].tolist()
+
     return df.drop(variables_to_remove, axis="columns")
+
 
 def encode_categorical(df: pd.DataFrame) -> pd.DataFrame:
     """Transform every categorical variable to numerical
@@ -309,11 +354,12 @@ def encode_categorical(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the DataFrame
     """
-    
-    cols = df.select_dtypes(include=['object']).columns.tolist()
+
+    cols = df.select_dtypes(include=["object"]).columns.tolist()
     df[cols] = df[cols].apply(LabelEncoder().fit_transform)
-    
+
     return df
+
 
 def remove_no_business_value_variables(df: pd.DataFrame) -> pd.DataFrame:
     """Theses variables don't have relationship with the target
@@ -325,31 +371,37 @@ def remove_no_business_value_variables(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: the DataFrame
     """
 
-    return df.drop([
-        'building_id',
-        'property_name',
-        'default_data',
-        'compliance_status',
-        'site_eui',
-        'site_euiwn',
-        'source_euiwn',
-        'source_eui',
-        'emissions_intensity',
-        'steam_use',
-        'natural_gas',
-        'natural_gas_therms',
-        'second_largest_property_use_type_gfa',
-        'second_largest_property_use_type',
-        'latitude',
-        'longitude',
-        'address',
-        'data_year',
-        'is_agregation',
-        'zip_code',
-        'year_built',
-        'council_district_code'
-        ],axis='columns'
+    return df.drop(
+        [
+            "building_id",
+            "property_name",
+            "default_data",
+            "compliance_status",
+            "site_eui",
+            "site_euiwn",
+            "source_euiwn",
+            "source_eui",
+            "emissions_intensity",
+            "steam_use",
+            "natural_gas",
+            "natural_gas_therms",
+            "second_largest_property_use_type_gfa",
+            "second_largest_property_use_type",
+            "building_type",
+            "primary_property_type",
+            "property_gfa_parking",
+            "coords",
+            "latitude",
+            "longitude",
+            "address",
+            "data_year",
+            "is_agregation",
+            "zip_code",
+            "year_built",
+        ],
+        axis="columns",
     )
+
 
 def apply_scaling(df: pd.DataFrame) -> pd.DataFrame:
     """Apply scaling to every columns
@@ -360,5 +412,46 @@ def apply_scaling(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the DataFrame
     """
-    
     return pd.DataFrame(StandardScaler().fit_transform(df), columns=df.columns)
+
+
+def distance_from(coords1: tuple, coords2: tuple) -> float:
+    """Calculate the distance from coordinates
+
+    Args:
+        coords1 (tuple): a tuple (lat, long)
+        coords2 (tuple): a tuple (lat, long)
+
+    Returns:
+        float: the distance
+    """
+    return round(hs.haversine(coords1, coords2), 2)
+
+
+def transform_target(df: pd.DataFrame, target: str) -> pd.DataFrame:
+    """Create a new column with a np.log of the selected variable
+
+    Args:
+        df (pd.DataFrame): A DataFrame
+        target (str): the selected variable
+
+    Returns:
+        pd.DataFrame: A DataFrame with a new variable
+    """
+    df[target] = df[df[target] > 0][target]
+    df[target] = np.log(df[target])
+
+    return df
+
+
+def create_variables(df: pd.DataFrame) -> pd.DataFrame:
+    df["number_of_floors"] = df["number_of_floors"] + 1
+    df["surface_per_floor"] = df["property_gfa_building"] / df["number_of_floors"]
+    df["surface_per_building"] = df["property_gfa_building"] / df["number_of_buildings"]
+    df["age"] = 2022 - df["year_built"]
+    df["have_parking"] = df["property_gfa_parking"] > 0
+    df["building_primary_type"] = (
+        df["building_type"] + " " + df["primary_property_type"]
+    )
+
+    return df
