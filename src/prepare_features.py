@@ -24,9 +24,10 @@ def feat_engineer_data(should_write: bool) -> pd.DataFrame:
 
     df = (
         df.pipe(utils.create_variables)
-        .pipe(utils.fix_multi_colinearity, config.BOUND, config.TARGET)
         .pipe(utils.transform_target, config.TARGET)
+        .pipe(utils.create_target_stats, config.TARGET, config.INPUT)
         .pipe(utils.remove_no_business_value_variables)
+        .pipe(utils.select_best_features, config.TARGET)
         .pipe(pd.DataFrame.dropna)
         .pipe(utils.encode_categorical)
         .pipe(utils.apply_scaling)
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--write",
         type=bool,
-        default=False,
+        default=True,
         help="Write a CSV file in <INPUT> folder.",
     )
 

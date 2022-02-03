@@ -8,34 +8,62 @@ from pydantic import BaseModel
 import config
 
 app = FastAPI()
-model = joblib.load("{0}best_model.z".format(config.MODELS))
 
 
 class Building(BaseModel):
     """The expected model from REST API request."""
 
-    some_property: int
+    neighborhood: str
+    list_of_all_property_use_types: str
+    largest_property_use_type: str
+    council_district_code: int
+    number_of_floors: int
+    energystar_score: float
+    distance_to_center: float
+    surface_per_building: float
+    age: int
+    have_parking: bool
+    building_primary_type: str
 
 
-@app.post("/")
+@app.post("/site_energy_use")
 def predict(building: Building):
-    """Return ML predictions, see /docs for more information.
+    """Return ML predictions for the Site Energy Use.
 
     Args:
         building: (Building) the parsed data from user request
 
     Returns:
-        A dictionnary with the predicted nutrigrade
+        A dictionnary with the predicted target em
         and the related probability
     """
-
+    model = joblib.load("{0}best_model{1}.z".format(config.MODELS, "site_energy_use"))
     # @TODO: build the sample
     sample = {}
 
     prediction = model.predict([sample])[0]
-    probability = model.predict_proba([sample]).argmax(1).item()
 
-    return {"prediction": prediction, "probability": probability}
+    return {"prediction": prediction}
+
+
+@app.post("/emissions")
+def predict(building: Building):
+    """Return ML predictions for the Building emissions.
+
+    Args:
+        building: (Building) the parsed data from user request
+
+    Returns:
+        A dictionnary with the predicted target em
+        and the related probability
+    """
+    model = joblib.load("{0}best_model{1}.z".format(config.MODELS, "site_energy_use"))
+    # @TODO: build the sample
+    sample = {}
+
+    prediction = model.predict([sample])[0]
+
+    return {"prediction": prediction}
 
 
 if __name__ == "__main__":
