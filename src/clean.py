@@ -48,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--write",
         type=bool,
-        default=False,
+        default=True,
         help="Write a CSV file in <INPUT> folder.",
     )
 

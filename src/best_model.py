@@ -11,19 +11,16 @@ import pandas as pd
 from rich.console import Console
 from rich.table import Table
 from sklearn import metrics
+from sklearn.ensemble import RandomForestRegressor
 
 import config
-import model_dispatcher
 
 console = Console()
 
 
-def run(model):
-    """Run the selected model.
-
-    Args:
-        model: (str)the selected model to be trained.
-    """
+def run():
+    """Make the prediction"""
+    model = "Random Forest"
     df = pd.read_pickle(config.TRAINING_FOLDS_FILE)
     columns = df.columns
 
@@ -37,7 +34,15 @@ def run(model):
         x_valid = np.array(df_valid.drop([config.TARGET, "kfold"], axis="columns"))
         y_valid = np.array(df_valid[config.TARGET])
 
-        clf = model_dispatcher.models[model]
+        clf = RandomForestRegressor(
+            n_estimators=1200,
+            criterion="absolute_error",
+            max_depth=15,
+            max_features=None,
+            min_samples_leaf=1,
+            min_samples_split=2,
+            n_jobs=-1,
+        )
 
         clf.fit(x_train, y_train)
 
@@ -60,20 +65,14 @@ def run(model):
             results = metric_func(y_valid, preds)
             console.log("Fold={0}, {1}={2}".format(fold, metric, results))
 
-        filepath = path.join("{0}{1}_{2}.z".format(config.MODELS, model, fold))
+        filepath = path.join("{0}{1}_{2}.z".format(config.MODELS, "best_model", fold))
         joblib.dump(clf, filepath, compress=("zlib", 7))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Train the Data using a model.",
-    )
-
-    parser.add_argument(
-        "--model",
-        type=str,
-        help="See src/model_dispatcher file.",
+        description="Create the best model dump.",
     )
 
     args = parser.parse_args()
-    run(model=args.model)
+    run()

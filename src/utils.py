@@ -152,6 +152,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df["neighborhood"] = df["neighborhood"].str.lower()
     df = df[~df.site_energy_use_target.isna()]
     df = df[~df.emissions_target.isna()]
+    df = df[df.compliance_status == "Compliant"]
 
     # treat latitude and longitude as floats
     df["latitude"] = df["latitude"].astype("float")
@@ -455,3 +456,52 @@ def create_variables(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
+
+
+def select_best_features(df: pd.DataFrame, target: str) -> pd.DataFrame:
+    return df[
+        [
+            "surface_per_building",
+            "building_primary_type",
+            "target_mean",
+            "have_parking",
+            "council_district_code",
+            "distance_to_center",
+            "age",
+            "surface_per_floor",
+            "energystar_score",
+            target,
+        ]
+    ]
+
+
+def create_target_stats(df: pd.DataFrame, target: str, path: str) -> pd.DataFrame:
+    """Generate targets statistics per Building Primary Type
+
+    Args:
+        df (pd.DataFrame): A DataFrame
+
+    Returns:
+        pd.DataFrame: A DataFrame
+    """
+    aggs = {}
+    aggs["emissions_target"] = ["max", "min", "mean", "count", "std"]
+    stats = df[["emissions_target", "building_primary_type"]]
+    stats = stats.groupby("building_primary_type").agg(aggs)
+    stats = stats.fillna(0).reset_index()
+
+    stats.T.reset_index(drop=True).T
+    stats.columns = [
+        "building_primary_type",
+        "max",
+        "min",
+        "target_mean",
+        "count",
+        "target_std",
+    ]
+
+    stats.to_csv("{0}target_stats.csv".format(path))
+
+    return df.merge(
+        stats[["building_primary_type", "target_mean"]], on="building_primary_type"
+    )
