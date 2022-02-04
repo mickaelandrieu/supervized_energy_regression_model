@@ -485,8 +485,8 @@ def create_target_stats(df: pd.DataFrame, target: str, path: str) -> pd.DataFram
         pd.DataFrame: A DataFrame
     """
     aggs = {}
-    aggs["emissions_target"] = ["max", "min", "mean", "count", "std"]
-    stats = df[["emissions_target", "building_primary_type"]]
+    aggs[target] = ["max", "min", "mean", "count", "std"]
+    stats = df[[target, "building_primary_type"]]
     stats = stats.groupby("building_primary_type").agg(aggs)
     stats = stats.fillna(0).reset_index()
 
