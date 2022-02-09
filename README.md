@@ -20,25 +20,16 @@ pip install -r requirements.txt
 docker build --tag app:1.0 .
 ```
 
-### Access the REST API
-
-```bash
-docker run --publish 8501:8501 -it app:1.0 src/api.py
-```
-
-Then access [http://localhost:8501](http://localhost:8501/docs)
-
-> Everytime you update the project, you must build a new image with a new tag.
-
 ## Train the model
 
 1. Download the RAW data ;
 2. Execute `src/clean.py` to create `cleaned_data.csv` ;
 3. Execute `src/prepare_features.py` to create `training.pkl` ;
 4. Execute `src/create_folds.py` to create `training_folds.pkl` ;
-5. Execute `src/train.py` to train the model ;
+4. Execute `src/tune_hyper_parameters.py` to get optimal parameters ;
+5. Execute `src/best.py` to train the model ;
 
-## Evaluate the performance of the model
+## Evaluate the performance of the models
 
 ```bash
 python src/report.py --fold=1

@@ -8,11 +8,12 @@ import config
 import utils
 
 
-def clean_data(should_write: bool) -> pd.DataFrame:
+def clean_data(should_write: bool, drop_score: bool) -> pd.DataFrame:
     """Clean the RAW data provided.
 
     Args:
         should_write (bool): if True, saves the DataFrame as CSV file.
+        drop_score (bool): if True, drops the Energy Star column.
 
     Returns:
         DataFrame: the cleaned DataFrame
@@ -34,6 +35,9 @@ def clean_data(should_write: bool) -> pd.DataFrame:
         .pipe(utils.remove_useless_variables)
     )
 
+    if drop_score:
+        df = df.drop(columns="energystar_score", axis="columns")
+
     if should_write:
         df.set_index("building_id").to_csv("{0}cleaned_data.csv".format(config.INPUT))
 
@@ -52,5 +56,12 @@ if __name__ == "__main__":
         help="Write a CSV file in <INPUT> folder.",
     )
 
+    parser.add_argument(
+        "--drop_score",
+        type=bool,
+        default=False,
+        help="Removes Energy Star Score.",
+    )
+
     args = parser.parse_args()
-    clean_data(should_write=args.write)
+    clean_data(should_write=args.write, drop_score=args.drop_score)

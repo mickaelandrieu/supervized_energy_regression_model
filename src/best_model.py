@@ -19,7 +19,7 @@ console = Console()
 
 
 def run():
-    """Make the prediction"""
+    """Make the best possible prediction with tuned hyper parameters."""
     model = "Random Forest"
     df = pd.read_pickle(config.TRAINING_FOLDS_FILE)
     columns = df.columns
@@ -54,16 +54,16 @@ def run():
         report.add_column("Feature", style="cyan")
         report.add_column("Importance", style="magenta")
 
-        for i in idxs[::-1]:
-            report.add_row(columns[i], str(importances[i]))
+        for id in idxs[::-1]:
+            report.add_row(columns[id], str(importances[id]))
 
         console.print(report)
 
         for metric in config.METRICS:
             metric_func = getattr(metrics, metric)
 
-            results = metric_func(y_valid, preds)
-            console.log("Fold={0}, {1}={2}".format(fold, metric, results))
+            score = metric_func(y_valid, preds)
+            console.log("Fold={0}, {1}={2}".format(fold, metric, score))
 
         filepath = path.join("{0}{1}_{2}.z".format(config.MODELS, "best_model", fold))
         joblib.dump(clf, filepath, compress=("zlib", 7))

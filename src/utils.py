@@ -260,9 +260,9 @@ def corr_filter(x: pd.DataFrame, bound: float) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame
     """
-    xCorr = x.corr()
-    xFiltered = xCorr[((xCorr >= bound) | (xCorr <= -bound)) & (xCorr != 1.000)]
-    return xFiltered
+    x_corr = x.corr()
+    x_filtered = x_corr[((x_corr >= bound) | (x_corr <= -bound)) & (x_corr != 1.000)]
+    return x_filtered
 
 
 def corr_filter_flattened(x: pd.DataFrame, bound: float) -> pd.DataFrame:
@@ -275,9 +275,9 @@ def corr_filter_flattened(x: pd.DataFrame, bound: float) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the DataFrame
     """
-    xFiltered = corr_filter(x, bound)
-    xFlattened = xFiltered.unstack().sort_values().drop_duplicates()
-    return xFlattened
+    x_filtered = corr_filter(x, bound)
+    x_flattened = x_filtered.unstack().sort_values().drop_duplicates()
+    return x_flattened
 
 
 def filter_for_labels(df: pd.DataFrame, label: str) -> pd.DataFrame:
@@ -293,39 +293,36 @@ def filter_for_labels(df: pd.DataFrame, label: str) -> pd.DataFrame:
     df = df.sort_index()
 
     try:
-        sideLeft = df[
+        side_left = df[
             label,
         ]
-    except:
-        sideLeft = pd.DataFrame()
+    except Exception:
+        side_left = pd.DataFrame()
 
     try:
-        sideRight = df[:, label]
-    except:
-        sideRight = pd.DataFrame()
+        side_right = df[:, label]
+    except Exception:
+        side_right = pd.DataFrame()
 
-    if sideLeft.empty and sideRight.empty:
+    if side_left.empty and side_right.empty:
         return pd.DataFrame()
-    elif sideLeft.empty:
-        concat = (
-            sideRight.to_frame(name="correlation")
+    elif side_left.empty:
+        return (
+            side_right.to_frame(name="correlation")
             .rename_axis("variable")
             .reset_index(level=0)
         )
-        return concat
-    elif sideRight.empty:
-        concat = (
-            sideLeft.to_frame(name="correlation")
+    elif side_right.empty:
+        return (
+            side_left.to_frame(name="correlation")
             .rename_axis("variable")
             .reset_index(level=0)
         )
-        return concat
-    else:
-        concat = pd.concat([sideLeft, sideRight], axis=1)
-        concat["correlation"] = concat[0].fillna(0) + concat[1].fillna(0)
-        concat.drop(columns=[0, 1], inplace=True)
+    concat = pd.concat([side_left, side_right], axis=1)
+    concat["correlation"] = concat[0].fillna(0) + concat[1].fillna(0)
+    concat = concat.drop(columns=[0, 1])
 
-        return concat.rename_axis("variable").reset_index(level=0)
+    return concat.rename_axis("variable").reset_index(level=0)
 
 
 def fix_multi_colinearity(df: pd.DataFrame, bound: float, target: str) -> pd.DataFrame:
@@ -458,21 +455,26 @@ def create_variables(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def select_best_features(df: pd.DataFrame, target: str) -> pd.DataFrame:
-    return df[
-        [
-            "surface_per_building",
-            "building_primary_type",
-            "target_mean",
-            "have_parking",
-            "council_district_code",
-            "distance_to_center",
-            "age",
-            "surface_per_floor",
-            "energystar_score",
-            target,
-        ]
+def select_best_features(
+    df: pd.DataFrame, target: str, drop_score: bool
+) -> pd.DataFrame:
+    best_features = [
+        "surface_per_building",
+        "building_primary_type",
+        "target_mean",
+        "have_parking",
+        "council_district_code",
+        "distance_to_center",
+        "age",
+        "surface_per_floor",
+        "energystar_score",
+        target,
     ]
+
+    if drop_score:
+        best_features.remove("energystar_score")
+
+    return df[best_features]
 
 
 def create_target_stats(df: pd.DataFrame, target: str, path: str) -> pd.DataFrame:
