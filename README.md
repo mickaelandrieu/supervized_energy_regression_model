@@ -1,8 +1,8 @@
-# ML App template
+# Predict CO2 emissions and total energy use of Seattle Buildings
 
 ## How to get the dataset
 
-@TODO
+You can download the dataset and its documentation on [Kaggle](https://www.kaggle.com/city-of-seattle/sea-building-energy-benchmarking#2015-building-energy-benchmarking.csv)
 
 ## Local installation
 
